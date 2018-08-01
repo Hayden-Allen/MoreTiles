@@ -4,35 +4,55 @@ class Tile {
 		this.img.src = src;
 				
 		this.extra = extra || {};
-		this.flags = flags || new BitSet(0b01);
+		this.flags = flags || new BitSet(Global.Flag.Property.grid);
 		
 		this.x = x * (this.flags.at(Global.Flag.Index.grid) ? Global.tilesize : 1);
 		this.y = y * (this.flags.at(Global.Flag.Index.grid) ? Global.tilesize : 1);
-		this.w = this.extra.w || Global.tilesize;
-		this.h = this.extra.h || Global.tilesize;
+		this.w = (this.extra.w || 1) * Global.tilesize;
+		this.h = (this.extra.h || 1) * Global.tilesize;
 		this.center = {x: this.x + this.w / 2, y: this.y + this.h / 2};
 		
-		Global.currentScene.add(this);
+		this.extra.rotation = this.extra.rotation || 0;
+		
+		this.children = [];
+		
+		if(this.extra.add || this.extra.add === undefined)
+			Global.currentScene.add(this);
+	}
+	setRotation(rad){
+		this.extra.rotation = rad;
+		
+		//this.children.forEach(function(c){ c.setRotation(rad); });
+	}
+	addChild(obj){
+		if(obj !== undefined)	//default value for Character item
+			this.children.push(obj);
+	}
+	removeChild(obj){
+		if(obj !== undefined){
+			for(var i = 0; i < this.children.length; i++){
+				if(this.children[i] === obj){
+					this.children.splice(i, 1);
+					return;
+				}
+			}
+		}
 	}
 	addX(x){
 		this.x += x;
 		this.center.x = this.x + this.w / 2;
-		this.x = Math.round(this.x);
 	}
 	setX(x){
 		this.x = x;
 		this.center.x = this.x + this.w / 2;
-		this.x = Math.round(this.x);
 	}
 	addY(y){
 		this.y += y;
 		this.center.y = this.y + this.h / 2;
-		this.y = Math.round(this.y);
 	}
 	setY(y){
 		this.y = y;
 		this.center.y = this.y + this.h / 2;
-		this.y = Math.round(this.y);
 	}
 	draw(offx, offy){
 		if(this.extra.rigid)
@@ -44,6 +64,11 @@ class Tile {
 		Global.ctx.translate(this.center.x + offx, this.center.y + offy);
 		Global.ctx.rotate(this.extra.rotation);
 		Global.ctx.drawImage(this.img, this.x - this.center.x, this.y - this.center.y, this.w, this.h);
+		
+		var self = this;
+		this.children.forEach(function(c){
+			c.draw(-self.w / 2, -self.h / 2);
+		});
 		
 		Global.ctx.restore();
 	}
