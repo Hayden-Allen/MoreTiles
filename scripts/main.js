@@ -7,7 +7,18 @@ var gfp = Global.Flag.Property;
 var scene1 = new Scene(0);
 
 Tools.tileStretch("assets/tile/grass.png", 0, 0, 15, 15);
-var fire = new AnimatedTile(3, 250, "assets/animation/fire.png", 7, 7, {light: 15, rigid: true}, new BitSet(gfp.movable | gfp.grid | gfp.destructible));
+var fire = new AnimatedTile(
+				3, 
+				250, 
+				"assets/animation/fire.png", 
+				7, 
+				7, 
+				{
+					light: 15, 
+					rigid: true
+				}, 
+				new BitSet(gfp.movable | gfp.grid | gfp.destructible | gfp.destructive)
+			);
 
 var sword = new Item(
 				"assets/item/sword.png", 
@@ -92,13 +103,83 @@ var ballandchain = new Item(
 							chain.forEach(function(c){Global.currentScene.remove(c);});
 						}
 					);
-
+var bow = new Item(
+				"assets/item/bow.png",
+				0,
+				0,
+				500,
+				async function(){
+					var sin = Math.round(Math.sin(player.extra.rotation));
+					var cos = -Math.round(Math.cos(player.extra.rotation));
+					
+					var p = new Projectile(
+						"assets/item/arrow.png",
+						player.x + Global.tilesize * sin,
+						player.y + Global.tilesize * cos,
+						15,
+						{
+							x: sin,
+							y: cos,
+							distance: 10 * Global.tilesize
+						},
+						{
+							rotation: player.extra.rotation,
+							rigid: true
+						},
+						new BitSet(gfp.destructible | gfp.destructive | gfp.fromPlayer)
+					);
+				}
+			);
+var grapple = new Item(
+					"assets/tile/stone.png",
+					Global.tilesize / 4,
+					Global.tilesize / 4,
+					250,
+					async function(){
+						var x = Math.round(Math.sin(player.extra.rotation));
+						var y = -Math.round(Math.cos(player.extra.rotation));
+						var distance = 4;
+						
+						/*new Tile(
+							"assets/tile/stone.png",
+							player.x + distance * x * Global.tilesize,
+							player.y + distance * y * Global.tilesize,
+							{
+								rigid: true
+							},
+							new BitSet(gfp.destructive | gfp.destructible | gfp.fromPlayer)
+						);*/
+						new Projectile(
+							"assets/item/arrow.png",
+							player.x - x * Global.tilesize + Global.tilesize / 4,
+							player.y - y * Global.tilesize,
+							2, 
+							{
+								x: x, 
+								y: y,
+								distance: distance * Global.tilesize
+							},
+							{
+								w: .5, 
+								h: .5,
+								rigid: true
+							},
+							new BitSet(gfp.fromPlayer)//gfp.destructive | gfp.destructible | gfp.fromPlayer)
+						);
+					},
+					{
+						w: .5,
+						h: .5
+					}
+				);
+			
+			
 var player = new Character(
 				"assets/tile/player.png",
 				6 * Global.tilesize, 
 				7 * Global.tilesize, 
 				10,
-				new Inventory([ballandchain, sword]), 
+				new Inventory([grapple, bow, ballandchain, sword]), 
 				{
 					rigid: true,
 					add: false

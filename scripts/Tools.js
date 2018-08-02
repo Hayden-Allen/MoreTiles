@@ -55,11 +55,7 @@ Tools = {
 			if(tile !== r){
 				var angle = Tools.angle(tile.center.x, tile.center.y, r.center.x, r.center.y).deg;
 			
-				if(//tile.img.src === "file:///C:/Users/e171363/Desktop/Personal/HTML/whyamistartingover/assets/animation/fire.png" &&
-					tile.img.src === "file:///C:/Users/e171363/Desktop/Personal/HTML/whyamistartingover/assets/tile/stone.png")
-					console.log(angle);
-				
-				if(angle >= 45 && angle < 135 && (tile.x + tile.w >= r.x && tile.x <= r.x + r.w && tile.y + tile.h > r.y)){
+				if(angle >= 45 && angle < 135 && (tile.x + tile.w > r.x && tile.x < r.x + r.w && tile.y + tile.h > r.y)){
 					if(tile.flags.at(Global.Flag.Index.movable))
 						tile.setY(r.y - tile.h);
 					collision = r;
@@ -69,20 +65,24 @@ Tools = {
 						tile.setX(r.x - tile.w);
 					collision = r;
 				}
-				if(angle >= 225 && angle < 315 && (tile.x + tile.w >= r.x && tile.x <= r.x + r.w && tile.y < r.y + r.h)){
+				if(angle >= 225 && angle < 315 && (tile.x + tile.w > r.x && tile.x < r.x + r.w && tile.y < r.y + r.h)){
 					if(tile.flags.at(Global.Flag.Index.movable))
 						tile.setY(r.y + r.h);
 					collision = r;
 				}
-				if((angle >= 315 || angle < 45) && (tile.y + tile.h >= r.y && tile.y <= r.y + r.h && tile.x <= r.x + r.w)){
+				if((angle >= 315 || angle < 45) && (tile.y + tile.h > r.y && tile.y < r.y + r.h && tile.x < r.x + r.w)){
 					if(tile.flags.at(Global.Flag.Index.movable))
 						tile.setX(r.x + r.w);
 					collision = r;
 				}
 			}
 		}		
-		if(collision && tile.flags.at(Global.Flag.Index.destructible) && collision.flags.at(Global.Flag.Index.destructive))
-			Global.currentScene.remove(tile);
+		if(collision){
+			if(tile.flags.at(Global.Flag.Index.destructible) && collision.flags.at(Global.Flag.Index.destructive))
+				Global.currentScene.remove(tile);
+			if(tile.flags.at(Global.Flag.Index.destructive) && collision.flags.at(Global.Flag.Index.destructible))
+				Global.currentScene.remove(collision);
+		}
 		
 		return collision;
 	},
