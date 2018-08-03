@@ -1,2 +1,2 @@
-holding direction gives sword hitbox more distance
-sword hitbox
+flashing on player when tile is destroyed
+pass parameter to item attack()

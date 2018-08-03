@@ -4,13 +4,13 @@ class Projectile extends Tile {
 		this.direction = dir;
 		this.speed = speed / 1000 * Global.tilesize;
 		
-		this.start = {x: dir.x, y: dir.y};
+		this.start = {x: x, y: y};
 	}
 	draw(offx, offy, time){
 		super.draw(offx, offy, time);
 		this.addX(this.direction.x * this.speed * Global.delta);
 		this.addY(this.direction.y * this.speed * Global.delta);
-		
+			
 		var bounds = Global.currentScene.bounds;
 		if(this.x > bounds.right ||
 		   this.x + this.w < bounds.left ||

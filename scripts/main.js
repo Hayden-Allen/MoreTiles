@@ -7,7 +7,7 @@ var gfp = Global.Flag.Property;
 var scene1 = new Scene(0);
 
 Tools.tileStretch("assets/tile/grass.png", 0, 0, 15, 15);
-var fire = new AnimatedTile(
+/*var fire = new AnimatedTile(
 				3, 
 				250, 
 				"assets/animation/fire.png", 
@@ -17,8 +17,10 @@ var fire = new AnimatedTile(
 					light: 15, 
 					rigid: true
 				}, 
-				new BitSet(gfp.movable | gfp.grid | gfp.destructible | gfp.destructive)
+				new BitSet(gfp.grid | gfp.destructible | gfp.destructive)
 			);
+*/
+var stone = new Tile("", 7, 7, {light: 15}, new BitSet(gfp.grid | gfp.destructible | gfp.destructive));
 
 var sword = new Item(
 				"assets/item/sword.png", 
@@ -30,18 +32,24 @@ var sword = new Item(
 					
 					var angle = Tools.toCartesianAngle(player.extra.rotation);
 					
-					var hitbox = new Tile(
-									"assets/tile/stone.png", 
-									player.x + Global.tilesize * Math.cos(angle), 
-									player.y - Global.tilesize * Math.sin(angle), 
-									{
-										rigid: true
-									}, 
-									new BitSet(gfp.destructive | gfp.fromPlayer)
-								);
+					var dir = {
+						x: Math.round(Math.sin(player.extra.rotation)),
+						y: -Math.round(Math.cos(player.extra.rotation)),
+						distance: Global.tilesize / 2
+					}
+					new Projectile(
+						"",
+						player.x + Global.tilesize * Math.cos(angle),
+						player.y - Global.tilesize * Math.sin(angle),
+						Global.tilesize / 2,
+						dir,
+						{
+							rigid: true
+						},
+						new BitSet(gfp.destructible | gfp.destructive | gfp.fromPlayer)
+					);
 					
 					await Tools.sleep(250);
-					Global.currentScene.remove(hitbox);
 					
 					this.tile.addY(Global.tilesize / 2);
 				},
@@ -134,52 +142,100 @@ var grapple = new Item(
 					"assets/tile/stone.png",
 					Global.tilesize / 4,
 					Global.tilesize / 4,
-					250,
-					async function(){
-						var x = Math.round(Math.sin(player.extra.rotation));
-						var y = -Math.round(Math.cos(player.extra.rotation));
-						var distance = 4;
-						
-						/*new Tile(
-							"assets/tile/stone.png",
-							player.x + distance * x * Global.tilesize,
-							player.y + distance * y * Global.tilesize,
-							{
-								rigid: true
-							},
-							new BitSet(gfp.destructive | gfp.destructible | gfp.fromPlayer)
-						);*/
-						new Projectile(
-							"assets/item/arrow.png",
-							player.x - x * Global.tilesize + Global.tilesize / 4,
-							player.y - y * Global.tilesize,
-							2, 
-							{
-								x: x, 
-								y: y,
-								distance: distance * Global.tilesize
-							},
-							{
-								w: .5, 
-								h: .5,
-								rigid: true
-							},
-							new BitSet(gfp.fromPlayer)//gfp.destructive | gfp.destructible | gfp.fromPlayer)
-						);
+					1000,
+					async function(asdf){
+						console.log(asdf);
 					},
 					{
 						w: .5,
-						h: .5
+						h: .5,
+						onSelect: function(){
+							this.cursor = new AnimatedTile(
+												2, 
+												250, 
+												"assets/animation/cursor_green.png", 
+												0,
+												0, 
+												{
+													grid: false
+												}, 
+												new BitSet(gfp.fromPlayer | gfp.ui)
+											);
+							this.cursor.controls = new Controls(this.cursor, {item: this, radius: 5 * Global.tilesize}, function(){
+								var angle = Tools.angle(Global.Mouse.x, Global.Mouse.y, player.center.x, player.center.y).theta;
+								
+								var x = player.center.x - Global.Mouse.x, signx = Math.sign(x);
+								var xmax = signx * Math.cos(angle) * this.extra.radius;
+								if(-signx * x < xmax)
+									x = -signx * xmax;
+								
+								var y = player.center.y - Global.Mouse.y, signy = Math.sign(y);
+								var ymax = -signy * this.extra.radius * Math.sin(angle);
+								if(-signy * y < ymax)
+									y = -signy * ymax;
+								
+								this.target.setX(camera.offx + parseInt((player.center.x - x) / Global.tilesize) * Global.tilesize);
+								this.target.setY(camera.offy + parseInt((player.center.y - y) / Global.tilesize) * Global.tilesize);
+								
+								if(Global.Mouse.buttons.at(Global.Mouse.Button.left)){
+									this.unbind();
+									this.extra.item.canAttack = true;
+									this.extra.item.use(1);
+								}
+							});
+						},
+						onDeselect: function(){
+							Global.currentScene.remove(this.cursor);
+							this.cursor.controls.unbind();
+							this.cursor = null;
+						}
 					}
 				);
-			
+var shield = new Item(
+				"assets/item/shield_inactive.png",
+				Global.tilesize / 4, 
+				Global.tilesize / 4,
+				1000,
+				async function(){
+					var cur = player.extra.rotation, end = parseFloat((cur + Math.PI).toFixed(4));
+					var tiles = [];
+					var step = Math.PI / 15, radius = Global.tilesize * 2.25;
+					
+					//cur += step * 12;
+					cur -= step;
+					end -= step;
+					
+					while(cur < end){
+						cur += step;
+						tiles.push(new Tile(
+										"assets/item/shield_active.png",
+										player.center.x - radius * Math.cos(cur) - Global.tilesize / 4,
+										player.center.y - radius * Math.sin(cur) - Global.tilesize / 4,
+										{
+											rigid: true,
+											w: .5,
+											h: .5
+										},
+										new BitSet(gfp.fromPlayer)
+									));
+						cur = parseFloat(cur.toFixed(4));
+					}
+					
+					await Tools.sleep(3000);
+					tiles.forEach(function(t){Global.currentScene.remove(t);});
+				},
+				{
+					w: .5,
+					h: .5
+				}
+			);
 			
 var player = new Character(
 				"assets/tile/player.png",
 				6 * Global.tilesize, 
 				7 * Global.tilesize, 
 				10,
-				new Inventory([grapple, bow, ballandchain, sword]), 
+				new Inventory([grapple, shield, bow, ballandchain, sword]), 
 				{
 					rigid: true,
 					add: false
@@ -198,17 +254,13 @@ player.controls = new Controls(player, {speed: player.speed, slowSpeed: player.s
 	this.target.setY(Tools.clamp(this.target.y, bounds.top, bounds.bottom - this.target.h));
 	
 	if(keys.at(Global.Key.space) && this.target.equipped)
-		this.target.equipped.use();
+		this.target.equipped.use(1);
 	if(keys.value >= Math.pow(2, Global.Key.c))
 		this.target.equip((Global.Key.$1 - Global.Key.c + 1) - (parseInt(Math.log2(keys.value)) - (Global.Key.c - 1)));
 });
 
-console.log(scene1.objects);
-
 var camera = new Camera(player);
 var renderer = new Renderer();
-
-console.log(scene1.rigids);
 
 scene1.finalize();
 
@@ -220,7 +272,7 @@ function update(){
 	
 	debug.update(player.x, player.y, renderer.sprites, renderer.minSprites, renderer.maxSprites, 1000 / Global.delta);
 	Tools.debug("debug", debug.string());
-	
+			
 	Global.controls.forEach(function(c){
 		c.update(Global.keys);
 	});
@@ -266,4 +318,21 @@ window.onkeyup = function(e){
 	case 83: Global.keys.set(Global.Key.s, false); break;
 	case 68: Global.keys.set(Global.Key.d, false); break;
 	}
+}
+var canvasBoundingRect = Global.c.getBoundingClientRect();
+window.onmousemove = function(e){
+	Global.Mouse.x = Tools.clamp(e.clientX - canvasBoundingRect.x, 0, Global.c.width) - camera.offx;
+	Global.Mouse.y = Tools.clamp(e.clientY - canvasBoundingRect.y, 0, Global.c.height) - camera.offy;
+	Global.Mouse.tx = parseInt(Global.Mouse.x / Global.tilesize) * Global.tilesize;
+	Global.Mouse.ty = parseInt(Global.Mouse.y / Global.tilesize) * Global.tilesize;
+}
+window.onmousedown = function(e){
+	e.preventDefault();
+	Global.Mouse.buttons.set(e.button, true);
+}
+window.onmouseup = function(e){
+	Global.Mouse.buttons.set(e.button, false);
+}
+window.oncontextmenu = function(e){
+	e.preventDefault();
 }

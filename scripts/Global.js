@@ -42,5 +42,17 @@ Global = {
 	last: performance.now(),
 	now: performance.now(),
 	currentScene: undefined,
-	lightMax: 15
+	lightMax: 15,
+	Mouse: {
+		x: 0,
+		y: 0,
+		tx: 0,
+		ty: 0,
+		buttons: new BitSet(0),
+		Button: {
+			left: 0,
+			middle: 1,
+			right: 2
+		}
+	}
 }

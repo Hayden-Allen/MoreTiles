@@ -16,4 +16,11 @@ class Controls {
 		if(!this.locked)
 			this.on(keys);
 	}
+	unbind(){
+		for(var i = 0; i < Global.controls.length; i++)
+			if(Global.controls[i] === this){
+				Global.controls.splice(i, 1);
+				return;
+			}
+	}
 }

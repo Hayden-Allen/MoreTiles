@@ -4,6 +4,9 @@ class Inventory {
 		this.items = items || [];
 		this.selected = 0;
 		
+		if(this.items.length)
+			this.items[this.selected].onSelect();
+		
 		this.padding = Global.tilesize / 8;
 		this.start = Math.round(c.width / 2 - (9 * (Global.tilesize + (26 / 9) * this.padding)) / 2);
 		this.step = (Global.tilesize + this.padding * 3);
@@ -29,7 +32,7 @@ class Inventory {
 			this.tiles.push(new Tile(
 								item.img.src,
 								((this.start + this.padding) + this.step * i) + (1 - w) * Global.tilesize / 2,
-								y + this.padding,
+								(y + this.padding) + (1 - h) * Global.tilesize / 2,
 								{
 									w: w,
 									h: h
@@ -50,9 +53,16 @@ class Inventory {
 						);
 	}
 	select(index){
-		this.selected = index;
-		this.cursor.setX(this.start + this.selected * this.step);
-		
+		if(index !== this.selected){
+			if(this.items[this.selected])
+				this.items[this.selected].onDeselect();
+			
+			this.selected = index;
+			this.cursor.setX(this.start + this.selected * this.step);
+			
+			if(this.items[this.selected])
+				this.items[this.selected].onSelect();
+		}		
 		return this.items[this.selected];
 	}
 }

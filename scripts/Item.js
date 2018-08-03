@@ -1,5 +1,5 @@
 class Item {
-	constructor(src, x, y, cooldown, attack, extra, flags, postCooldown){
+	constructor(src, x, y, cooldown, attack, extra, flags){
 		extra = extra || {};
 		extra.add = false;
 		
@@ -7,7 +7,9 @@ class Item {
 		
 		this.cooldown = cooldown;
 		this.attack = attack;
-		this.postCooldown = postCooldown || function(){};
+		this.postCooldown = extra && extra.postCooldown ? extra.postCooldown : function(){};
+		this.onSelect = extra && extra.onSelect ? extra.onSelect : function(){};
+		this.onDeselect = extra && extra.onDeselect ? extra.onDeselect : function(){};
 		this.canAttack = true;
 	}
 	async use(){
