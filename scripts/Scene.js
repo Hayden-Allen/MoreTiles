@@ -52,6 +52,14 @@ class Scene {
 				}
 			}
 		}
+		if(obj.flags.at(Global.Flag.Index.ui)){
+			for(var i = 0; i < this.uis.length; i++){
+				if(this.uis[i] === obj){
+					this.uis.splice(i, 1);
+					break;
+				}
+			}
+		}
 	}
 	propagate(x, y, i){
 		var value = Math.min(Global.lightMax, this.lightMin + i);

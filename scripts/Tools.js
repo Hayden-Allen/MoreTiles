@@ -91,5 +91,8 @@ Tools = {
 	},
 	toCartesianAngle: function(angle){
 		return ((5 - (angle / (Math.PI / 2))) % 4) * (Math.PI / 2);
+	},
+	toTileCoord(x){
+		return parseInt(x / Global.tilesize) * Global.tilesize;
 	}
 }

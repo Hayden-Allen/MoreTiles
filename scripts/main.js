@@ -1,5 +1,5 @@
-Global.c.width = window.innerWidth - 40;
-Global.c.height = window.innerHeight - 40;
+Global.c.width = window.innerWidth - Global.tilesize;
+Global.c.height = window.innerHeight - Global.tilesize;
 
 var gfp = Global.Flag.Property;
 
@@ -143,12 +143,79 @@ var grapple = new Item(
 					Global.tilesize / 4,
 					Global.tilesize / 4,
 					1000,
-					async function(asdf){
-						console.log(asdf);
+					async function(angle){
+						if(!angle)
+							return;
+						
+						var dir = {
+							x: Math.sign(angle.dx),
+							y: Math.sign(angle.dy)
+						}
+						
+						if(angle.theta == Math.PI / 2)
+							console.log(dir);
+						
+						var chains = this.extra.radius / Global.tilesize, chain = [], chainstep = this.extra.radius / chains;
+						
+						for(var i = 0; i < chains; i++)
+							chain.push(new Tile(
+								"assets/item/chain.png",
+								player.x + Math.cos(angle.theta) * chainstep * (i + 1),
+								player.y - Math.sin(angle.theta) * chainstep * (i + 1),
+								{
+									grid: false
+								},
+								new BitSet(gfp.fromPlayer)
+							));
+						
+						if(dir.x)
+							(new Projectile(
+								"",
+								player.x - dir.x * Global.tilesize,
+								player.y,
+								this.extra.speed,
+								{
+									x: angle.cos,
+									y: -angle.sin,
+									distance: this.extra.radius
+								},
+								{
+									grid: false,
+									rigid: true
+								},
+								new BitSet(gfp.fromPlayer)
+							)).onDestroy = function(){
+								chain.forEach(function(c){
+									Global.currentScene.remove(c);
+								});
+							}
+						if(dir.y)
+							(new Projectile(
+								"",
+								player.x,
+								player.y - dir.y * Global.tilesize,
+								this.extra.speed,
+								{
+									x: angle.cos,
+									y: -angle.sin,
+									distance: this.extra.radius,
+								},
+								{
+									grid: false,
+									rigid: true
+								},
+								new BitSet(gfp.fromPlayer)
+							)).onDestroy = function(){
+								chain.forEach(function(c){
+									Global.currentScene.remove(c);
+								});
+							}
 					},
 					{
 						w: .5,
 						h: .5,
+						radius: 6 * Global.tilesize,
+						speed: 30,
 						onSelect: function(){
 							this.cursor = new AnimatedTile(
 												2, 
@@ -161,33 +228,45 @@ var grapple = new Item(
 												}, 
 												new BitSet(gfp.fromPlayer | gfp.ui)
 											);
-							this.cursor.controls = new Controls(this.cursor, {item: this, radius: 5 * Global.tilesize}, function(){
-								var angle = Tools.angle(Global.Mouse.x, Global.Mouse.y, player.center.x, player.center.y).theta;
+							this.cursor.controls = new Controls(this.cursor, {item: this, radius: this.extra.radius}, function(){
+								var angle = Tools.angle(Tools.toTileCoord(Global.Mouse.x) + Global.tilesize / 2, 
+														Tools.toTileCoord(Global.Mouse.y) + Global.tilesize / 2,
+														Tools.toTileCoord(player.x) + player.w / 2, 
+														Tools.toTileCoord(player.y) + player.h / 2);	
 								
 								var x = player.center.x - Global.Mouse.x, signx = Math.sign(x);
-								var xmax = signx * Math.cos(angle) * this.extra.radius;
+								var xmax = signx * angle.cos * this.extra.radius;
 								if(-signx * x < xmax)
 									x = -signx * xmax;
 								
 								var y = player.center.y - Global.Mouse.y, signy = Math.sign(y);
-								var ymax = -signy * this.extra.radius * Math.sin(angle);
+								var ymax = -signy * this.extra.radius * angle.sin;
 								if(-signy * y < ymax)
 									y = -signy * ymax;
 								
-								this.target.setX(camera.offx + parseInt((player.center.x - x) / Global.tilesize) * Global.tilesize);
-								this.target.setY(camera.offy + parseInt((player.center.y - y) / Global.tilesize) * Global.tilesize);
+								this.target.setX(camera.offx + Tools.toTileCoord(player.x + player.w / 2 - x));
+								this.target.setY(camera.offy + Tools.toTileCoord(player.y + player.w / 2 - y));
 								
+								/*new Tile("assets/tile/stone.png", parseInt((player.center.x - x) / Global.tilesize) * Global.tilesize,
+									parseInt((player.center.y - y) / Global.tilesize) * Global.tilesize, {grid: false}, new BitSet(gfp.fromPlayer));
+								*/
 								if(Global.Mouse.buttons.at(Global.Mouse.Button.left)){
 									this.unbind();
 									this.extra.item.canAttack = true;
-									this.extra.item.use(1);
+									this.extra.item.use(angle);
+									this.extra.item.onDeselect();
 								}
 							});
 						},
 						onDeselect: function(){
-							Global.currentScene.remove(this.cursor);
-							this.cursor.controls.unbind();
-							this.cursor = null;
+							if(this.cursor){
+								Global.currentScene.remove(this.cursor);
+								this.cursor.controls.unbind();
+								this.cursor = null;
+							}
+						},
+						postCooldown: function(){
+							this.onSelect();
 						}
 					}
 				);
@@ -232,8 +311,8 @@ var shield = new Item(
 			
 var player = new Character(
 				"assets/tile/player.png",
-				6 * Global.tilesize, 
-				7 * Global.tilesize, 
+				14 * Global.tilesize, 
+				12 * Global.tilesize, 
 				10,
 				new Inventory([grapple, shield, bow, ballandchain, sword]), 
 				{
@@ -254,7 +333,7 @@ player.controls = new Controls(player, {speed: player.speed, slowSpeed: player.s
 	this.target.setY(Tools.clamp(this.target.y, bounds.top, bounds.bottom - this.target.h));
 	
 	if(keys.at(Global.Key.space) && this.target.equipped)
-		this.target.equipped.use(1);
+		this.target.equipped.use();
 	if(keys.value >= Math.pow(2, Global.Key.c))
 		this.target.equip((Global.Key.$1 - Global.Key.c + 1) - (parseInt(Math.log2(keys.value)) - (Global.Key.c - 1)));
 });
