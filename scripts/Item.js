@@ -18,6 +18,7 @@ class Item {
 			this.canAttack = false;
 			
 			await this.attack(args);
+			console.log("A");
 			await Tools.sleep(this.cooldown);
 			await this.postCooldown();
 			

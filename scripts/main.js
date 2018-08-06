@@ -143,7 +143,8 @@ var grapple = new Item(
 					Global.tilesize / 4,
 					Global.tilesize / 4,
 					1000,
-					async function(angle){
+					async function(cursor){
+						var angle = cursor.angle;
 						if(!angle)
 							return;
 						
@@ -152,10 +153,9 @@ var grapple = new Item(
 							y: Math.sign(angle.dy)
 						}
 						
-						if(angle.theta == Math.PI / 2)
-							console.log(dir);
-						
-						var chains = this.extra.radius / Global.tilesize, chain = [], chainstep = this.extra.radius / chains;
+						var dist = Math.min(this.extra.radius, 
+											Tools.distance(player.x, player.y, cursor.x * Global.tilesize, cursor.y * Global.tilesize));
+						var chains = this.extra.radius / Global.tilesize, chain = [], chainstep = dist / chains;
 						
 						for(var i = 0; i < chains; i++)
 							chain.push(new Tile(
@@ -167,17 +167,17 @@ var grapple = new Item(
 								},
 								new BitSet(gfp.fromPlayer)
 							));
-						
+												
 						if(dir.x)
 							(new Projectile(
-								"",
+								"assets/item/arrow.png",
 								player.x - dir.x * Global.tilesize,
 								player.y,
 								this.extra.speed,
 								{
 									x: angle.cos,
 									y: -angle.sin,
-									distance: this.extra.radius
+									distance: dist
 								},
 								{
 									grid: false,
@@ -191,14 +191,14 @@ var grapple = new Item(
 							}
 						if(dir.y)
 							(new Projectile(
-								"",
+								"assets/item/arrow.png",
 								player.x,
 								player.y - dir.y * Global.tilesize,
 								this.extra.speed,
 								{
 									x: angle.cos,
 									y: -angle.sin,
-									distance: this.extra.radius,
+									distance: dist
 								},
 								{
 									grid: false,
@@ -210,12 +210,14 @@ var grapple = new Item(
 									Global.currentScene.remove(c);
 								});
 							}
+							
+						await Tools.sleep((dist / Global.tilesize) / this.extra.speed * 1000);
 					},
 					{
 						w: .5,
 						h: .5,
 						radius: 6 * Global.tilesize,
-						speed: 30,
+						speed: 5,
 						onSelect: function(){
 							this.cursor = new AnimatedTile(
 												2, 
@@ -234,26 +236,29 @@ var grapple = new Item(
 														Tools.toTileCoord(player.x) + player.w / 2, 
 														Tools.toTileCoord(player.y) + player.h / 2);	
 								
-								var x = player.center.x - Global.Mouse.x, signx = Math.sign(x);
+								var x = player.center.x - (Global.Mouse.x + Global.tilesize / 2), signx = Math.sign(x);
 								var xmax = signx * angle.cos * this.extra.radius;
-								if(-signx * x < xmax)
-									x = -signx * xmax;
+								var y = player.center.y - (Global.Mouse.y + Global.tilesize / 2), signy = Math.sign(y);
+								var ymax = this.extra.radius * angle.sin;
 								
-								var y = player.center.y - Global.Mouse.y, signy = Math.sign(y);
-								var ymax = -signy * this.extra.radius * angle.sin;
-								if(-signy * y < ymax)
-									y = -signy * ymax;
-								
-								this.target.setX(camera.offx + Tools.toTileCoord(player.x + player.w / 2 - x));
-								this.target.setY(camera.offy + Tools.toTileCoord(player.y + player.w / 2 - y));
+								if(signy == 1 && y > ymax)
+									y = ymax;
+								if(signy == -1 && y < ymax)
+									y = ymax;
+								if(signx == 1 && x > -xmax)
+									x = -xmax;
+								if(signx == -1 && x < xmax)
+									x = xmax;
+								this.target.setX(camera.offx + Tools.toTileCoord(player.x + player.w / 2 - (x + Global.tilesize / 2)));
+								this.target.setY(camera.offy + Tools.toTileCoord(player.y + player.w / 2 - (y + Global.tilesize / 2)));
 								
 								/*new Tile("assets/tile/stone.png", parseInt((player.center.x - x) / Global.tilesize) * Global.tilesize,
 									parseInt((player.center.y - y) / Global.tilesize) * Global.tilesize, {grid: false}, new BitSet(gfp.fromPlayer));
 								*/
 								if(Global.Mouse.buttons.at(Global.Mouse.Button.left)){
 									this.unbind();
-									this.extra.item.canAttack = true;
-									this.extra.item.use(angle);
+									//this.extra.item.canAttack = true;
+									this.extra.item.use({angle: angle, x: Global.Mouse.tx, y: Global.Mouse.ty});
 									this.extra.item.onDeselect();
 								}
 							});
@@ -402,8 +407,8 @@ var canvasBoundingRect = Global.c.getBoundingClientRect();
 window.onmousemove = function(e){
 	Global.Mouse.x = Tools.clamp(e.clientX - canvasBoundingRect.x, 0, Global.c.width) - camera.offx;
 	Global.Mouse.y = Tools.clamp(e.clientY - canvasBoundingRect.y, 0, Global.c.height) - camera.offy;
-	Global.Mouse.tx = parseInt(Global.Mouse.x / Global.tilesize) * Global.tilesize;
-	Global.Mouse.ty = parseInt(Global.Mouse.y / Global.tilesize) * Global.tilesize;
+	Global.Mouse.tx = parseInt(Global.Mouse.x / Global.tilesize);
+	Global.Mouse.ty = parseInt(Global.Mouse.y / Global.tilesize);
 }
 window.onmousedown = function(e){
 	e.preventDefault();
