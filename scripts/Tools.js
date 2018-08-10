@@ -94,5 +94,8 @@ Tools = {
 	},
 	toTileCoord(x){
 		return parseInt(x / Global.tilesize) * Global.tilesize;
+	},
+	distance(x1, y1, x2, y2){
+		return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
 	}
 }
