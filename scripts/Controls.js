@@ -1,10 +1,10 @@
-class Controls {
+class Controls {	//adds custom functionality to Tiles; mainly used for movement
 	constructor(target, extra, on){
-		this.target = target;
-		this.extra = extra;
-		this.on = on;
-		this.locked = false;
-		Global.controls.push(this);
+		this.target = target;	//Tile to act on
+		this.extra = extra;	//extra data
+		this.on = on;	//function to be executed on update
+		this.locked = false;	//whether or not these Controls are active
+		Global.controls.push(this);	//add to Global array for automatic update each frame
 	}
 	lock(){
 		this.locked = true;
@@ -16,7 +16,7 @@ class Controls {
 		if(!this.locked)
 			this.on(keys);
 	}
-	unbind(){
+	unbind(){	//delete
 		for(var i = 0; i < Global.controls.length; i++)
 			if(Global.controls[i] === this){
 				Global.controls.splice(i, 1);

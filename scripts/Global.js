@@ -1,17 +1,17 @@
 Global = {
-	tilesize: 40,
-	c: document.getElementById("c"),
-	ctx: c.getContext("2d"),
-	Flag: {
+	tilesize: 40,	//default width and height of Tiles
+	c: document.getElementById("c"),	//canvas
+	ctx: c.getContext("2d"),	//canvas draw context
+	Flag: {	//list of Tile flag indices and values
 		Index: {
-			grid: 0,
-			movable: 1,
-			ui: 2,
-			destructible: 3,
-			destructive: 4,
-			fromPlayer: 5
+			grid: 0,	//is bound to the Scene grid
+			movable: 1,	//is movable by rigid Tiles
+			ui: 2,	//is a UI element
+			destructible: 3,	//can be destroyed by rigid Tiles
+			destructive: 4,	//can destroy rigid Tiles
+			fromPlayer: 5	//spawned from a player's Item
 		},
-		Property: {
+		Property: {	//same as above, but these are actual values (for or-ing)
 			grid: 1,
 			movable: 2,
 			ui: 4,
@@ -20,13 +20,13 @@ Global = {
 			fromPlayer: 32
 		}
 	},
-	controls: [],
-	keys: new BitSet(0),
+	controls: [],	//list of Controls to be updated each frame
+	keys: new BitSet(0),	//keeps track of keyboard input
 	Key: {
-		$1: 0xD,
-		$2: 0xC,
-		$3: 0xB,
-		$4: 0xA,
+		$1: 0xD,	//1
+		$2: 0xC,	//2
+		$3: 0xB,	//3
+		$4: 0xA,	//4
 		q: 9,
 		e: 8,
 		r: 7,
@@ -38,14 +38,16 @@ Global = {
 		s: 1,
 		d: 0
 	},
-	delta: 0,
+	delta: 0,	//time (in ms) since last frame
+	//updated each frame, used to calculate delta
 	last: performance.now(),
 	now: performance.now(),
-	currentScene: undefined,
-	lightMax: 15,
-	Mouse: {
+	currentScene: undefined,	//Scene being displayed
+	lightMax: 15,	//maximum light value for any given Tile
+	Mouse: {	//simple mouse object keeping track of coordinates and button presses
 		x: 0,
 		y: 0,
+		//Scene grid coordinates
 		tx: 0,
 		ty: 0,
 		buttons: new BitSet(0),
